@@ -5,9 +5,12 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "seed": "npx ts-node --project tsconfig.json -e \"require('./src/scripts/seed.ts')\""
   },
   "dependencies": {
+    "mongoose": "^9.2.3",
+    "nanoid": "^5.1.6",
     "next": "16.1.6",
     "react": "19.2.3",
     "react-dom": "19.2.3"
