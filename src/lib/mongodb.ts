@@ -1,11 +1,6 @@
 import mongoose from 'mongoose'
 
-const MONGODB_URI = process.env.MONGODB_URI!
 const MONGODB_DB = process.env.MONGODB_DB || 'wildcard'
-
-if (!MONGODB_URI) {
-  throw new Error('Please define the MONGODB_URI environment variable')
-}
 
 interface MongooseCache {
   conn: typeof mongoose | null
@@ -21,10 +16,14 @@ const cached: MongooseCache = global._mongooseCache ?? { conn: null, promise: nu
 global._mongooseCache = cached
 
 export async function connectDB(): Promise<typeof mongoose> {
+  // Guard deferred to call time so the module loads cleanly during `next build`
+  const uri = process.env.MONGODB_URI
+  if (!uri) throw new Error('Please define the MONGODB_URI environment variable')
+
   if (cached.conn) return cached.conn
 
   if (!cached.promise) {
-    cached.promise = mongoose.connect(MONGODB_URI, {
+    cached.promise = mongoose.connect(uri, {
       dbName: MONGODB_DB,
       bufferCommands: false,
     })
