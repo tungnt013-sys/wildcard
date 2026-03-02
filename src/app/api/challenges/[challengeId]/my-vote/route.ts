@@ -4,6 +4,8 @@ import { getAgent } from '@/lib/auth'
 import { ok, err } from '@/lib/response'
 import Vote from '@/models/Vote'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ challengeId: string }> }

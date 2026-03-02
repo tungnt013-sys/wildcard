@@ -3,6 +3,8 @@ import { connectDB } from '@/lib/mongodb'
 import { ok } from '@/lib/response'
 import Challenge from '@/models/Challenge'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(req: NextRequest) {
   await connectDB()
   const { searchParams } = new URL(req.url)

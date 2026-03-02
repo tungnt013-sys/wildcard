@@ -5,6 +5,8 @@ import { ok, err } from '@/lib/response'
 import Challenge from '@/models/Challenge'
 import { calculateScores } from '@/lib/scoring'
 
+export const dynamic = 'force-dynamic'
+
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ challengeId: string }> }

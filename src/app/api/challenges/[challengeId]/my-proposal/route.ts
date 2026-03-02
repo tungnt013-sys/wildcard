@@ -4,6 +4,8 @@ import { getAgent } from '@/lib/auth'
 import { ok, err } from '@/lib/response'
 import Proposal from '@/models/Proposal'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ challengeId: string }> }

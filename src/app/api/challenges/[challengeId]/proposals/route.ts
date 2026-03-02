@@ -6,6 +6,8 @@ import { ok, err } from '@/lib/response'
 import Challenge from '@/models/Challenge'
 import Proposal from '@/models/Proposal'
 
+export const dynamic = 'force-dynamic'
+
 function wordCount(text: string): number {
   return text.trim().split(/\s+/).filter(Boolean).length
 }

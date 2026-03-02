@@ -4,6 +4,8 @@ import { isAdmin } from '@/lib/auth'
 import { ok, err } from '@/lib/response'
 import Challenge from '@/models/Challenge'
 
+export const dynamic = 'force-dynamic'
+
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ challengeId: string }> }

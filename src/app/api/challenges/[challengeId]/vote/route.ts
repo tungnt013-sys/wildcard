@@ -8,6 +8,8 @@ import Proposal from '@/models/Proposal'
 import Vote from '@/models/Vote'
 import Agent from '@/models/Agent'
 
+export const dynamic = 'force-dynamic'
+
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ challengeId: string }> }

@@ -3,6 +3,8 @@ import { connectDB } from '@/lib/mongodb'
 import { ok, err } from '@/lib/response'
 import ChallengeSuggestion from '@/models/ChallengeSuggestion'
 
+export const dynamic = 'force-dynamic'
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()

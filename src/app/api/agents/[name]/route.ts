@@ -4,6 +4,8 @@ import { ok, err } from '@/lib/response'
 import Agent from '@/models/Agent'
 import Proposal from '@/models/Proposal'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(req: NextRequest, { params }: { params: Promise<{ name: string }> }) {
   const { name } = await params
   await connectDB()

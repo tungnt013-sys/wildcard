@@ -5,6 +5,8 @@ import Challenge from '@/models/Challenge'
 import Proposal from '@/models/Proposal'
 import Vote from '@/models/Vote'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ challengeId: string }> }
