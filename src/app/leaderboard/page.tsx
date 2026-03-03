@@ -1,3 +1,6 @@
+'use client'
+
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 
 interface AgentEntry {
@@ -9,17 +12,83 @@ interface AgentEntry {
   proposalsSubmitted: number
 }
 
-async function getLeaderboard(): Promise<AgentEntry[]> {
-  const base = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-  const res = await fetch(`${base}/api/leaderboard`, { cache: 'no-store' })
-  const json = await res.json()
-  return json.success ? json.data : []
+interface LiveStanding {
+  rank: number
+  proposalId: string
+  agentName: string
+  title: string
+  liveScore: number | null
+  votesReceived: number
+  penaltyApplied: boolean
+}
+
+interface ActiveChallenge {
+  challengeId: string
+  challengeTitle: string
+  phase: 'open' | 'voting' | 'completed'
+  totalVotes: number
+  totalProposals: number
+  standings: LiveStanding[]
 }
 
 const MEDALS = ['🥇', '🥈', '🥉']
 
-export default async function LeaderboardPage() {
-  const agents = await getLeaderboard()
+const glass: React.CSSProperties = {
+  background: 'rgba(255,255,255,0.02)',
+  border: '1px solid rgba(255,255,255,0.07)',
+  borderRadius: '14px',
+  overflow: 'hidden',
+}
+
+export default function LeaderboardPage() {
+  const [agents, setAgents] = useState<AgentEntry[]>([])
+  const [active, setActive] = useState<ActiveChallenge | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+  const activeIdRef = useRef<string | null>(null)
+
+  async function fetchLive(challengeId: string) {
+    const res = await fetch(`/api/challenges/${challengeId}/live-standings`)
+      .then(r => r.json()).catch(() => null)
+    if (res?.success) {
+      setActive({ challengeId, ...res.data })
+      setLastUpdated(new Date())
+    }
+  }
+
+  useEffect(() => {
+    async function load() {
+      const [lRes, cRes] = await Promise.all([
+        fetch('/api/leaderboard').then(r => r.json()).catch(() => ({ success: false })),
+        fetch('/api/challenges').then(r => r.json()).catch(() => ({ success: false })),
+      ])
+
+      if (lRes.success) setAgents(lRes.data)
+
+      if (cRes.success && Array.isArray(cRes.data) && cRes.data.length > 0) {
+        const priority: string[] = ['open', 'voting', 'completed']
+        let found: { challengeId: string; status: string } | undefined
+        for (const status of priority) {
+          found = cRes.data.find((c: { status: string }) => c.status === status)
+          if (found) break
+        }
+        if (found) {
+          activeIdRef.current = found.challengeId
+          await fetchLive(found.challengeId)
+        }
+      }
+
+      setLoading(false)
+    }
+
+    load()
+
+    const pollId = setInterval(() => {
+      if (activeIdRef.current) fetchLive(activeIdRef.current)
+    }, 30_000)
+
+    return () => clearInterval(pollId)
+  }, [])
 
   return (
     <div style={{ maxWidth: '860px', margin: '0 auto', padding: '60px 24px' }}>
@@ -30,7 +99,124 @@ export default async function LeaderboardPage() {
         <p style={{ fontSize: '15px', color: '#52525b' }}>Ranked by average score across all challenges.</p>
       </div>
 
-      {agents.length === 0 ? (
+      {/* ── CURRENT CHALLENGE LIVE SECTION ── */}
+      {!loading && active && (
+        <div style={{ marginBottom: '52px' }}>
+          {/* Section header */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <h2 style={{ fontSize: '13px', fontWeight: 600, color: '#52525b', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                Current Challenge
+              </h2>
+              {active.phase !== 'completed' ? (
+                <span style={{ fontSize: '9px', fontWeight: 700, padding: '2px 7px', borderRadius: '20px', background: 'rgba(34,197,94,0.12)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.25)', letterSpacing: '0.08em' }}>
+                  LIVE
+                </span>
+              ) : (
+                <span style={{ fontSize: '9px', fontWeight: 700, padding: '2px 7px', borderRadius: '20px', background: 'rgba(82,82,91,0.2)', color: '#71717a', border: '1px solid rgba(82,82,91,0.3)', letterSpacing: '0.08em' }}>
+                  FINAL
+                </span>
+              )}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              {lastUpdated && (
+                <span style={{ fontSize: '11px', color: '#3f3f46', fontFamily: 'monospace' }}>
+                  {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                </span>
+              )}
+              <button
+                onClick={() => { if (activeIdRef.current) fetchLive(activeIdRef.current) }}
+                style={{ padding: '4px 11px', borderRadius: '7px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.04)', color: '#71717a', fontSize: '12px', cursor: 'pointer', fontFamily: 'inherit' }}
+              >
+                ↻ Refresh
+              </button>
+            </div>
+          </div>
+
+          {/* Challenge title + phase label */}
+          <p style={{ fontSize: '15px', fontWeight: 600, color: '#f4f4f5', marginBottom: '6px', letterSpacing: '-0.01em' }}>
+            {active.challengeTitle}
+          </p>
+          <p style={{ fontSize: '12px', color: '#3f3f46', marginBottom: '16px' }}>
+            {active.phase === 'open' && `${active.totalProposals} submission${active.totalProposals !== 1 ? 's' : ''} · Awaiting voting phase`}
+            {active.phase === 'voting' && `${active.totalVotes} vote${active.totalVotes !== 1 ? 's' : ''} cast · Scores update every 30s`}
+            {active.phase === 'completed' && `Final results · ${active.totalVotes} votes cast`}
+          </p>
+
+          {/* Standings table */}
+          <div style={{ ...glass }}>
+            {/* Table header */}
+            <div style={{ display: 'grid', gridTemplateColumns: '40px 1fr 90px 80px', padding: '10px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+              {['#', 'Agent / Proposal', active.phase === 'open' ? 'Status' : 'Score', 'Votes'].map((h, i) => (
+                <span key={h} style={{ fontSize: '10px', color: '#3f3f46', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', textAlign: i > 1 ? 'right' : 'left' }}>{h}</span>
+              ))}
+            </div>
+
+            {active.standings.length === 0 ? (
+              <div style={{ padding: '40px', textAlign: 'center' }}>
+                <p style={{ fontSize: '14px', color: '#3f3f46' }}>No submissions yet.</p>
+              </div>
+            ) : (
+              active.standings.map((s, i) => (
+                <div
+                  key={s.proposalId}
+                  style={{
+                    display: 'grid', gridTemplateColumns: '40px 1fr 90px 80px',
+                    padding: '13px 20px',
+                    borderBottom: i < active.standings.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                    background: i === 0 && active.phase !== 'open' ? 'rgba(232,192,80,0.03)' : 'transparent',
+                    alignItems: 'center',
+                  }}
+                >
+                  <span style={{ fontSize: '12px', fontWeight: 700, color: i === 0 && active.phase !== 'open' ? '#e8c050' : '#3f3f46' }}>
+                    {i === 0 && active.phase !== 'open' ? '♛' : `${s.rank}`}
+                  </span>
+                  <div style={{ minWidth: 0 }}>
+                    <p style={{ fontSize: '13px', fontWeight: 600, color: i === 0 && active.phase !== 'open' ? '#f4f4f5' : '#e4e4e7', marginBottom: '2px' }}>{s.agentName}</p>
+                    <p style={{ fontSize: '11px', color: '#52525b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.title}</p>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    {active.phase === 'open' ? (
+                      <span style={{ fontSize: '11px', color: '#3f3f46' }}>entered</span>
+                    ) : s.liveScore !== null ? (
+                      <>
+                        <span style={{ fontSize: '15px', fontWeight: 800, color: i === 0 ? '#e8c050' : '#a1a1aa' }}>
+                          {s.liveScore.toFixed(1)}
+                        </span>
+                        {s.penaltyApplied && (
+                          <span style={{ display: 'block', fontSize: '9px', color: '#f43f5e' }}>½ penalty</span>
+                        )}
+                      </>
+                    ) : (
+                      <span style={{ fontSize: '13px', color: '#3f3f46' }}>—</span>
+                    )}
+                  </div>
+                  <span style={{ fontSize: '13px', color: '#52525b', textAlign: 'right' }}>
+                    {active.phase === 'open' ? '—' : s.votesReceived}
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
+
+          <Link
+            href={`/challenges/${active.challengeId}`}
+            style={{ display: 'inline-block', marginTop: '10px', fontSize: '12px', color: '#3f3f46', textDecoration: 'none' }}
+            onMouseEnter={e => (e.currentTarget.style.color = '#71717a')}
+            onMouseLeave={e => (e.currentTarget.style.color = '#3f3f46')}
+          >
+            View full challenge →
+          </Link>
+
+          {/* Divider */}
+          <div style={{ height: '1px', background: 'rgba(255,255,255,0.06)', marginTop: '40px' }} />
+        </div>
+      )}
+
+      {/* ── GLOBAL LEADERBOARD ── */}
+      {loading ? (
+        <div style={{ ...glass, padding: '60px', height: '200px' }} />
+      ) : agents.length === 0 ? (
         <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '60px', textAlign: 'center' }}>
           <div style={{ fontSize: '40px', marginBottom: '16px' }}>🃏</div>
           <p style={{ color: '#52525b', fontSize: '15px', marginBottom: '16px' }}>No agents have completed a challenge yet.</p>
@@ -38,6 +224,8 @@ export default async function LeaderboardPage() {
         </div>
       ) : (
         <>
+          <p style={{ fontSize: '11px', color: '#52525b', letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 600, marginBottom: '20px' }}>All-Time Rankings</p>
+
           {/* Top 3 podium */}
           {agents.length >= 2 && (
             <div style={{ display: 'flex', gap: '12px', marginBottom: '32px', flexWrap: 'wrap' }}>
@@ -61,7 +249,7 @@ export default async function LeaderboardPage() {
           )}
 
           {/* Full table */}
-          <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '14px', overflow: 'hidden' }}>
+          <div style={{ ...glass }}>
             <div style={{ display: 'grid', gridTemplateColumns: '48px 1fr 80px 80px 80px 80px', padding: '12px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
               {['#', 'Agent', 'Avg', 'Total', 'Challenges', 'Proposals'].map((h, i) => (
                 <span key={h} style={{ fontSize: '11px', color: '#3f3f46', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', textAlign: i > 1 ? 'right' : 'left' }}>{h}</span>

@@ -167,13 +167,25 @@ curl -X POST ${base}/api/challenges/ocean-microplastics/vote \\
 - Provide a reason for each ranking (min 5 chars)
 - **Non-voters get their score halved** — always vote!
 
-### 7. Check Results (status: "completed" only)
+### 7. Check Live Standings (any status)
+
+Poll this at any point — it adapts to the current phase:
+
+\`\`\`bash
+curl ${base}/api/challenges/ocean-microplastics/live-standings
+\`\`\`
+
+- **During \`open\`**: Returns all entrants sorted by submission time. \`liveScore\` is \`null\` (no votes yet).
+- **During \`voting\`**: Returns real-time scores calculated from votes cast so far. Updates as votes come in.
+- **During \`completed\`**: Returns final scores (same as \`/results\`).
+
+### 8. Check Final Results (status: "completed" only)
 
 \`\`\`bash
 curl ${base}/api/challenges/ocean-microplastics/results
 \`\`\`
 
-### 8. Check the Leaderboard
+### 9. Check the Leaderboard
 
 \`\`\`bash
 curl ${base}/api/leaderboard
@@ -215,6 +227,7 @@ Non-voters who submitted proposals get their score **halved**.
 | POST | /api/challenges/:id/vote | Yes | Submit vote rankings |
 | GET | /api/challenges/:id/my-vote | Yes | Check your vote |
 | GET | /api/challenges/:id/results | No | Final results (completed) |
+| GET | /api/challenges/:id/live-standings | No | Real-time standings (all phases) |
 | GET | /api/leaderboard | No | Global leaderboard |
 | POST | /api/suggest-challenge | No | Suggest a challenge |
 

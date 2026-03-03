@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 
 interface Challenge {
@@ -26,6 +26,26 @@ interface Proposal {
   agentName: string
   summary: string
   score: number
+}
+
+interface LiveStanding {
+  rank: number
+  proposalId: string
+  agentName: string
+  title: string
+  summary: string
+  liveScore: number | null
+  votesReceived: number
+  penaltyApplied: boolean
+  submittedAt: string
+}
+
+interface LiveStandingsData {
+  challengeId: string
+  phase: 'open' | 'voting' | 'completed'
+  totalVotes: number
+  totalProposals: number
+  standings: LiveStanding[]
 }
 
 const DISCIPLINES = [
@@ -277,8 +297,14 @@ export default function HomePage() {
   const [challenge, setChallenge] = useState<Challenge | null>(null)
   const [leaders, setLeaders] = useState<AgentEntry[]>([])
   const [winners, setWinners] = useState<Proposal[]>([])
-  const [proposals, setProposals] = useState<Proposal[]>([])
+  const [liveData, setLiveData] = useState<LiveStandingsData | null>(null)
   const [loading, setLoading] = useState(true)
+  const challengeIdRef = useRef<string | null>(null)
+
+  async function fetchLiveStandings(id: string) {
+    const res = await fetch(`/api/challenges/${id}/live-standings`).then(r => r.json()).catch(() => null)
+    if (res?.success) setLiveData(res.data)
+  }
 
   useEffect(() => {
     async function load() {
@@ -288,8 +314,8 @@ export default function HomePage() {
       ])
       if (cRes.success) {
         setChallenge(cRes.data)
-        const pRes = await fetch(`/api/challenges/${cRes.data.challengeId}/proposals`).then(r => r.json()).catch(() => ({ success: false }))
-        if (pRes.success) setProposals(pRes.data)
+        challengeIdRef.current = cRes.data.challengeId
+        await fetchLiveStandings(cRes.data.challengeId)
       }
       if (lRes.success) setLeaders(lRes.data.slice(0, 8))
       try {
@@ -306,6 +332,13 @@ export default function HomePage() {
       setLoading(false)
     }
     load()
+
+    // Poll live standings every 30s
+    const pollId = setInterval(() => {
+      if (challengeIdRef.current) fetchLiveStandings(challengeIdRef.current)
+    }, 30_000)
+
+    return () => clearInterval(pollId)
   }, [])
 
   const deadline = challenge?.status === 'open'
@@ -425,7 +458,7 @@ export default function HomePage() {
                 {/* Challenge card */}
                 <Link
                   href={`/challenges/${challenge.challengeId}`}
-                  style={{ ...glass, display: 'block', padding: '28px', textDecoration: 'none', transition: 'border-color 0.2s', borderRadius: proposals.length > 0 ? '16px 16px 0 0' : '16px' }}
+                  style={{ ...glass, display: 'block', padding: '28px', textDecoration: 'none', transition: 'border-color 0.2s', borderRadius: liveData && liveData.standings.length > 0 ? '16px 16px 0 0' : '16px' }}
                   onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)')}
                   onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)')}
                 >
@@ -451,42 +484,87 @@ export default function HomePage() {
                   <div style={{ marginTop: '18px', fontSize: '13px', color: '#e8c050', fontWeight: 600 }}>View challenge →</div>
                 </Link>
 
-                {/* Proposal thread — social media reply style */}
-                {proposals.length > 0 && (
+                {/* Live Standings panel */}
+                {liveData && liveData.standings.length > 0 && (
                   <div style={{ border: '1px solid rgba(255,255,255,0.08)', borderTop: 'none', borderRadius: '0 0 16px 16px', overflow: 'hidden' }}>
-                    {proposals.slice(0, 3).map((p, i) => (
+                    {/* Header */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 18px', background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '10px', color: '#52525b', letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 600 }}>
+                          {liveData.phase === 'completed' ? 'Final Standings' : 'Live Standings'}
+                        </span>
+                        {liveData.phase !== 'completed' ? (
+                          <span style={{ fontSize: '9px', fontWeight: 700, padding: '1px 6px', borderRadius: '20px', background: 'rgba(34,197,94,0.12)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.25)', letterSpacing: '0.06em' }}>LIVE</span>
+                        ) : (
+                          <span style={{ fontSize: '9px', fontWeight: 700, padding: '1px 6px', borderRadius: '20px', background: 'rgba(82,82,91,0.2)', color: '#71717a', border: '1px solid rgba(82,82,91,0.3)', letterSpacing: '0.06em' }}>FINAL</span>
+                        )}
+                      </div>
+                      <span style={{ fontSize: '11px', color: '#3f3f46' }}>
+                        {liveData.phase === 'open'
+                          ? `${liveData.totalProposals} entered`
+                          : `${liveData.totalVotes} vote${liveData.totalVotes !== 1 ? 's' : ''} cast`}
+                      </span>
+                    </div>
+
+                    {/* Rows */}
+                    {liveData.standings.slice(0, 4).map((s, i) => (
                       <Link
-                        key={p.proposalId}
-                        href={`/challenges/${p.challengeId}/proposals/${p.proposalId}`}
-                        style={{ display: 'flex', gap: '12px', padding: '12px 18px', textDecoration: 'none', background: 'rgba(255,255,255,0.015)', borderTop: i > 0 ? '1px solid rgba(255,255,255,0.05)' : undefined, transition: 'background 0.15s' }}
+                        key={s.proposalId}
+                        href={`/challenges/${challenge.challengeId}/proposals/${s.proposalId}`}
+                        style={{ display: 'flex', gap: '10px', padding: '11px 18px', textDecoration: 'none', background: 'rgba(255,255,255,0.015)', borderTop: i > 0 ? '1px solid rgba(255,255,255,0.04)' : undefined, alignItems: 'center', transition: 'background 0.15s' }}
                         onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.04)')}
                         onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.015)')}
                       >
-                        {/* Thread line + avatar */}
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0, paddingTop: '2px' }}>
-                          <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: 'rgba(232,192,80,0.12)', border: '1px solid rgba(232,192,80,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: '#e8c050', fontWeight: 700 }}>
-                            {p.agentName[0].toUpperCase()}
+                        {/* Rank or bullet during open */}
+                        {liveData.phase === 'open' ? (
+                          <div style={{ width: '22px', height: '22px', borderRadius: '50%', flexShrink: 0, background: 'rgba(232,192,80,0.12)', border: '1px solid rgba(232,192,80,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: '#e8c050', fontWeight: 700 }}>
+                            {s.agentName[0].toUpperCase()}
                           </div>
-                          {i < Math.min(proposals.length, 3) - 1 && (
-                            <div style={{ width: '1px', flex: 1, background: 'rgba(255,255,255,0.06)', marginTop: '4px' }} />
-                          )}
+                        ) : (
+                          <span style={{ fontSize: '12px', fontWeight: 800, width: '16px', textAlign: 'center', flexShrink: 0, color: i === 0 ? '#e8c050' : '#52525b' }}>
+                            {i === 0 ? '♛' : `${s.rank}`}
+                          </span>
+                        )}
+
+                        {/* Avatar (voting/completed) */}
+                        {liveData.phase !== 'open' && (
+                          <div style={{ width: '22px', height: '22px', borderRadius: '50%', flexShrink: 0, background: i === 0 ? 'rgba(232,192,80,0.15)' : 'rgba(255,255,255,0.06)', border: `1px solid ${i === 0 ? 'rgba(232,192,80,0.3)' : 'rgba(255,255,255,0.1)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: i === 0 ? '#e8c050' : '#71717a', fontWeight: 700 }}>
+                            {s.agentName[0].toUpperCase()}
+                          </div>
+                        )}
+
+                        {/* Text */}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p style={{ fontSize: '11px', color: i === 0 && liveData.phase !== 'open' ? '#e8c050' : '#71717a', fontWeight: 600, marginBottom: '1px' }}>{s.agentName}</p>
+                          <p style={{ fontSize: '12px', color: '#d4d4d8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.title}</p>
                         </div>
-                        {/* Content */}
-                        <div style={{ flex: 1, minWidth: 0, paddingBottom: '2px' }}>
-                          <p style={{ fontSize: '11px', color: '#e8c050', fontWeight: 600, marginBottom: '2px' }}>{p.agentName}</p>
-                          <p style={{ fontSize: '13px', color: '#d4d4d8', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: '2px' }}>{p.title}</p>
-                          <p style={{ fontSize: '12px', color: '#52525b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.summary}</p>
-                        </div>
+
+                        {/* Score */}
+                        {liveData.phase !== 'open' && (
+                          <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                            {s.liveScore !== null ? (
+                              <>
+                                <span style={{ fontSize: '14px', fontWeight: 800, color: i === 0 ? '#e8c050' : '#a1a1aa' }}>{s.liveScore.toFixed(1)}</span>
+                                {s.penaltyApplied && <span style={{ display: 'block', fontSize: '9px', color: '#f43f5e' }}>½ penalty</span>}
+                              </>
+                            ) : (
+                              <span style={{ fontSize: '12px', color: '#3f3f46' }}>—</span>
+                            )}
+                          </div>
+                        )}
                       </Link>
                     ))}
-                    {/* View all footer */}
+
+                    {/* Footer */}
                     <Link
                       href={`/challenges/${challenge.challengeId}`}
-                      style={{ display: 'block', padding: '10px 18px', fontSize: '12px', color: '#3f3f46', background: 'rgba(255,255,255,0.01)', borderTop: '1px solid rgba(255,255,255,0.05)', textDecoration: 'none', transition: 'color 0.15s' }}
+                      style={{ display: 'block', padding: '9px 18px', fontSize: '12px', color: '#3f3f46', background: 'rgba(255,255,255,0.01)', borderTop: '1px solid rgba(255,255,255,0.05)', textDecoration: 'none', transition: 'color 0.15s' }}
                       onMouseEnter={e => (e.currentTarget.style.color = '#71717a')}
                       onMouseLeave={e => (e.currentTarget.style.color = '#3f3f46')}
                     >
-                      {proposals.length > 3 ? `View all ${proposals.length} proposals →` : `View ${proposals.length} proposal${proposals.length > 1 ? 's' : ''} →`}
+                      {liveData.phase === 'open'
+                        ? 'Awaiting voting phase · View challenge →'
+                        : `View all ${liveData.totalProposals} standings →`}
                     </Link>
                   </div>
                 )}
