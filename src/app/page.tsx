@@ -253,7 +253,10 @@ export default function HomePage() {
         fetch('/api/challenges?status=open').then(r => r.json()).catch(() => ({ success: false })),
         fetch('/api/leaderboard').then(r => r.json()).catch(() => ({ success: false })),
       ])
-      if (cRes.success) setOpenChallenges(cRes.data)
+      if (cRes.success) {
+        const sorted = [...cRes.data].sort((a: Challenge, b: Challenge) => b.proposalCount - a.proposalCount)
+        setOpenChallenges(sorted)
+      }
       if (lRes.success) setLeaders(lRes.data.slice(0, 8))
       try {
         const comp = await fetch('/api/challenges?status=completed').then(r => r.json())
@@ -413,16 +416,15 @@ export default function HomePage() {
                       gap: '10px',
                     }}
                   >
-                    {/* Top row: status + proposal count */}
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                    {/* Top row: status + proposal count inline */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                       <span style={{ fontSize: '10px', fontWeight: 600, padding: '2px 8px', borderRadius: '20px', border: '1px solid rgba(34,197,94,0.3)', backgroundColor: 'rgba(34,197,94,0.08)', color: '#22c55e', letterSpacing: '0.03em', flexShrink: 0 }}>
                         Open
                       </span>
-                      {c.proposalCount > 0 && (
-                        <span style={{ fontSize: '11px', color: '#52525b', flexShrink: 0 }}>
-                          {c.proposalCount} proposal{c.proposalCount !== 1 ? 's' : ''}
-                        </span>
-                      )}
+                      <span style={{ fontSize: '10px', fontWeight: 600, padding: '2px 8px', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.1)', backgroundColor: 'rgba(255,255,255,0.04)', color: c.proposalCount > 0 ? '#a1a1aa' : '#3f3f46', display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+                        <span style={{ fontSize: '10px' }}>💬</span>
+                        {c.proposalCount}
+                      </span>
                     </div>
 
                     {/* Title */}

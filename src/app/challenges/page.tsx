@@ -6,6 +6,7 @@ interface Challenge {
   problem: string
   inspirationDomains: string[]
   status: string
+  proposalCount: number
 }
 
 async function getChallenges(status?: string) {
@@ -13,14 +14,16 @@ async function getChallenges(status?: string) {
   const url = status && status !== 'all' ? `${base}/api/challenges?status=${status}` : `${base}/api/challenges`
   const res = await fetch(url, { cache: 'no-store' })
   const json = await res.json()
-  return json.success ? (json.data as Challenge[]) : []
+  if (!json.success) return []
+  const challenges = json.data as Challenge[]
+  return [...challenges].sort((a, b) => b.proposalCount - a.proposalCount)
 }
 
 const STATUS_COLORS: Record<string, string> = {
   open: '#22c55e', voting: '#e8c050', completed: '#52525b', upcoming: '#8b5cf6',
 }
 const STATUS_LABELS: Record<string, string> = {
-  open: 'Submissions Open', voting: 'Voting Open', completed: 'Completed', upcoming: 'Upcoming',
+  open: 'Open', voting: 'Voting', completed: 'Completed', upcoming: 'Upcoming',
 }
 
 const glass: React.CSSProperties = {
@@ -50,7 +53,7 @@ export default async function ChallengesPage({
       </div>
 
       <div style={{ display: 'flex', gap: '6px', marginBottom: '28px', flexWrap: 'wrap' }}>
-        {['all', 'open', 'voting', 'completed', 'upcoming'].map(s => (
+        {['all', 'open', 'completed'].map(s => (
           <Link key={s} href={s === 'all' ? '/challenges' : `/challenges?status=${s}`}
             style={{ padding: '6px 15px', borderRadius: '20px', fontSize: '12px', fontWeight: 600, textDecoration: 'none', letterSpacing: '0.02em', border: '1px solid', transition: 'all 0.15s', backgroundColor: active === s ? 'rgba(232,192,80,0.12)' : 'rgba(255,255,255,0.03)', borderColor: active === s ? 'rgba(232,192,80,0.38)' : 'rgba(255,255,255,0.08)', color: active === s ? '#e8c050' : '#52525b' }}>
             {s.charAt(0).toUpperCase() + s.slice(1)}
@@ -69,9 +72,13 @@ export default async function ChallengesPage({
             >
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                    <span style={{ fontSize: '10px', fontWeight: 600, padding: '2px 8px', borderRadius: '20px', border: `1px solid ${STATUS_COLORS[challenge.status]}44`, backgroundColor: `${STATUS_COLORS[challenge.status]}10`, color: STATUS_COLORS[challenge.status], letterSpacing: '0.03em' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px', flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '10px', fontWeight: 600, padding: '2px 9px', borderRadius: '20px', border: `1px solid ${STATUS_COLORS[challenge.status]}44`, backgroundColor: `${STATUS_COLORS[challenge.status]}10`, color: STATUS_COLORS[challenge.status], letterSpacing: '0.03em' }}>
                       {STATUS_LABELS[challenge.status] || challenge.status}
+                    </span>
+                    <span style={{ fontSize: '10px', fontWeight: 600, padding: '2px 8px', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.1)', backgroundColor: 'rgba(255,255,255,0.04)', color: challenge.proposalCount > 0 ? '#a1a1aa' : '#3f3f46', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      <span>💬</span>
+                      {challenge.proposalCount}
                     </span>
                   </div>
                   <h2 style={{ fontSize: '17px', fontWeight: 700, letterSpacing: '-0.02em', color: '#f4f4f5', marginBottom: '6px', lineHeight: 1.3 }}>
