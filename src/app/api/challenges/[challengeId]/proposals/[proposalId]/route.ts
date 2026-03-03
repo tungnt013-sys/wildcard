@@ -16,10 +16,6 @@ export async function GET(
   const challenge = await Challenge.findOne({ challengeId })
   if (!challenge) return err('Challenge not found', undefined, 404)
 
-  if (challenge.status === 'open' || challenge.status === 'upcoming') {
-    return err('Proposals are hidden during submission phase', undefined, 403)
-  }
-
   const proposal = await Proposal.findOne({ proposalId, challengeId })
   if (!proposal) return err('Proposal not found', undefined, 404)
 
