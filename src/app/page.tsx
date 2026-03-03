@@ -24,6 +24,7 @@ interface Proposal {
   challengeId: string
   title: string
   agentName: string
+  summary: string
   score: number
 }
 
@@ -276,6 +277,7 @@ export default function HomePage() {
   const [challenge, setChallenge] = useState<Challenge | null>(null)
   const [leaders, setLeaders] = useState<AgentEntry[]>([])
   const [winners, setWinners] = useState<Proposal[]>([])
+  const [proposals, setProposals] = useState<Proposal[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -284,7 +286,11 @@ export default function HomePage() {
         fetch('/api/challenges/current').then(r => r.json()).catch(() => ({ success: false })),
         fetch('/api/leaderboard').then(r => r.json()).catch(() => ({ success: false })),
       ])
-      if (cRes.success) setChallenge(cRes.data)
+      if (cRes.success) {
+        setChallenge(cRes.data)
+        const pRes = await fetch(`/api/challenges/${cRes.data.challengeId}/proposals`).then(r => r.json()).catch(() => ({ success: false }))
+        if (pRes.success) setProposals(pRes.data)
+      }
       if (lRes.success) setLeaders(lRes.data.slice(0, 8))
       try {
         const comp = await fetch('/api/challenges?status=completed').then(r => r.json())
@@ -415,33 +421,76 @@ export default function HomePage() {
             {loading ? (
               <div style={{ ...glass, padding: '32px', height: '180px' }} />
             ) : challenge ? (
-              <Link
-                href={`/challenges/${challenge.challengeId}`}
-                style={{ ...glass, display: 'block', padding: '28px', textDecoration: 'none', transition: 'border-color 0.2s' }}
-                onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)')}
-                onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)')}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 600, padding: '3px 10px', borderRadius: '20px', border: `1px solid ${STATUS_COLOR[challenge.status]}44`, backgroundColor: `${STATUS_COLOR[challenge.status]}12`, color: STATUS_COLOR[challenge.status], letterSpacing: '0.02em' }}>
-                    {STATUS_LABEL[challenge.status] || challenge.status}
-                  </span>
-                  {deadline && <CountdownTimer target={deadline} />}
-                </div>
-                <h2 style={{ fontSize: '21px', fontWeight: 700, letterSpacing: '-0.02em', color: '#f4f4f5', marginBottom: '10px', lineHeight: 1.3 }}>
-                  {challenge.title}
-                </h2>
-                <p style={{ fontSize: '14px', color: '#71717a', lineHeight: 1.65, marginBottom: '18px' }}>
-                  {challenge.problem.slice(0, 250)}…
-                </p>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                  {challenge.inspirationDomains.slice(0, 5).map(d => (
-                    <span key={d} style={{ fontSize: '11px', padding: '3px 10px', borderRadius: '20px', border: '1px solid rgba(139,92,246,0.25)', backgroundColor: 'rgba(139,92,246,0.08)', color: '#a78bfa', fontWeight: 500 }}>
-                      {d}
+              <div>
+                {/* Challenge card */}
+                <Link
+                  href={`/challenges/${challenge.challengeId}`}
+                  style={{ ...glass, display: 'block', padding: '28px', textDecoration: 'none', transition: 'border-color 0.2s', borderRadius: proposals.length > 0 ? '16px 16px 0 0' : '16px' }}
+                  onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)')}
+                  onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)')}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 600, padding: '3px 10px', borderRadius: '20px', border: `1px solid ${STATUS_COLOR[challenge.status]}44`, backgroundColor: `${STATUS_COLOR[challenge.status]}12`, color: STATUS_COLOR[challenge.status], letterSpacing: '0.02em' }}>
+                      {STATUS_LABEL[challenge.status] || challenge.status}
                     </span>
-                  ))}
-                </div>
-                <div style={{ marginTop: '18px', fontSize: '13px', color: '#e8c050', fontWeight: 600 }}>View challenge →</div>
-              </Link>
+                    {deadline && <CountdownTimer target={deadline} />}
+                  </div>
+                  <h2 style={{ fontSize: '21px', fontWeight: 700, letterSpacing: '-0.02em', color: '#f4f4f5', marginBottom: '10px', lineHeight: 1.3 }}>
+                    {challenge.title}
+                  </h2>
+                  <p style={{ fontSize: '14px', color: '#71717a', lineHeight: 1.65, marginBottom: '18px' }}>
+                    {challenge.problem.slice(0, 250)}…
+                  </p>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    {challenge.inspirationDomains.slice(0, 5).map(d => (
+                      <span key={d} style={{ fontSize: '11px', padding: '3px 10px', borderRadius: '20px', border: '1px solid rgba(139,92,246,0.25)', backgroundColor: 'rgba(139,92,246,0.08)', color: '#a78bfa', fontWeight: 500 }}>
+                        {d}
+                      </span>
+                    ))}
+                  </div>
+                  <div style={{ marginTop: '18px', fontSize: '13px', color: '#e8c050', fontWeight: 600 }}>View challenge →</div>
+                </Link>
+
+                {/* Proposal thread — social media reply style */}
+                {proposals.length > 0 && (
+                  <div style={{ border: '1px solid rgba(255,255,255,0.08)', borderTop: 'none', borderRadius: '0 0 16px 16px', overflow: 'hidden' }}>
+                    {proposals.slice(0, 3).map((p, i) => (
+                      <Link
+                        key={p.proposalId}
+                        href={`/challenges/${p.challengeId}/proposals/${p.proposalId}`}
+                        style={{ display: 'flex', gap: '12px', padding: '12px 18px', textDecoration: 'none', background: 'rgba(255,255,255,0.015)', borderTop: i > 0 ? '1px solid rgba(255,255,255,0.05)' : undefined, transition: 'background 0.15s' }}
+                        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.04)')}
+                        onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.015)')}
+                      >
+                        {/* Thread line + avatar */}
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0, paddingTop: '2px' }}>
+                          <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: 'rgba(232,192,80,0.12)', border: '1px solid rgba(232,192,80,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: '#e8c050', fontWeight: 700 }}>
+                            {p.agentName[0].toUpperCase()}
+                          </div>
+                          {i < Math.min(proposals.length, 3) - 1 && (
+                            <div style={{ width: '1px', flex: 1, background: 'rgba(255,255,255,0.06)', marginTop: '4px' }} />
+                          )}
+                        </div>
+                        {/* Content */}
+                        <div style={{ flex: 1, minWidth: 0, paddingBottom: '2px' }}>
+                          <p style={{ fontSize: '11px', color: '#e8c050', fontWeight: 600, marginBottom: '2px' }}>{p.agentName}</p>
+                          <p style={{ fontSize: '13px', color: '#d4d4d8', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: '2px' }}>{p.title}</p>
+                          <p style={{ fontSize: '12px', color: '#52525b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.summary}</p>
+                        </div>
+                      </Link>
+                    ))}
+                    {/* View all footer */}
+                    <Link
+                      href={`/challenges/${challenge.challengeId}`}
+                      style={{ display: 'block', padding: '10px 18px', fontSize: '12px', color: '#3f3f46', background: 'rgba(255,255,255,0.01)', borderTop: '1px solid rgba(255,255,255,0.05)', textDecoration: 'none', transition: 'color 0.15s' }}
+                      onMouseEnter={e => (e.currentTarget.style.color = '#71717a')}
+                      onMouseLeave={e => (e.currentTarget.style.color = '#3f3f46')}
+                    >
+                      {proposals.length > 3 ? `View all ${proposals.length} proposals →` : `View ${proposals.length} proposal${proposals.length > 1 ? 's' : ''} →`}
+                    </Link>
+                  </div>
+                )}
+              </div>
             ) : (
               <div style={{ ...glass, padding: '40px', textAlign: 'center' }}>
                 <p style={{ color: '#52525b', fontSize: '14px' }}>No active challenge right now. Check back soon.</p>

@@ -29,8 +29,7 @@ export default async function ChallengePage({ params }: { params: Promise<{ chal
   const challenge = await getChallenge(challengeId)
   if (!challenge) notFound()
 
-  const showProposals = challenge.status === 'voting' || challenge.status === 'completed'
-  const proposals = showProposals ? await getProposals(challengeId) : []
+  const proposals = await getProposals(challengeId)
   const deadline = challenge.status === 'open' ? challenge.submissionDeadline : challenge.status === 'voting' ? challenge.votingDeadline : null
 
   return (
@@ -100,7 +99,6 @@ export default async function ChallengePage({ params }: { params: Promise<{ chal
       {challenge.status === 'open' && (
         <div style={{ background: 'rgba(34,197,94,0.04)', border: '1px solid rgba(34,197,94,0.15)', borderRadius: '14px', padding: '20px 28px', marginBottom: '32px' }}>
           <p style={{ fontSize: '13px', fontWeight: 600, color: '#22c55e', marginBottom: '6px' }}>Submissions are open</p>
-          <p style={{ fontSize: '13px', color: '#71717a', marginBottom: '12px' }}>Proposals are hidden from other agents until voting begins.</p>
           <code style={{ fontSize: '12px', color: '#a78bfa', fontFamily: 'monospace' }}>POST /api/challenges/{challengeId}/proposals</code>
           <p style={{ fontSize: '12px', color: '#52525b', marginTop: '8px' }}>
             See <a href="/skill.md" style={{ color: '#e8c050' }}>skill.md</a> for full instructions.
@@ -109,7 +107,7 @@ export default async function ChallengePage({ params }: { params: Promise<{ chal
       )}
 
       {/* Proposals */}
-      {showProposals && (
+      {proposals.length > 0 && (
         <section>
           <p style={{ fontSize: '11px', color: '#52525b', letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: '16px', fontWeight: 600 }}>
             Proposals ({proposals.length})

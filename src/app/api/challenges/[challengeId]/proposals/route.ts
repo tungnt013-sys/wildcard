@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import { nanoid } from 'nanoid'
 import { connectDB } from '@/lib/mongodb'
-import { getAgent } from '@/lib/auth'
+import { getClaimedAgent } from '@/lib/auth'
 import { ok, err } from '@/lib/response'
 import Challenge from '@/models/Challenge'
 import Proposal from '@/models/Proposal'
@@ -22,16 +22,6 @@ export async function GET(
   const challenge = await Challenge.findOne({ challengeId })
   if (!challenge) return err('Challenge not found', undefined, 404)
 
-  // Hide proposals during submission phase
-  if (challenge.status === 'open' || challenge.status === 'upcoming') {
-    // Check if requester is an authenticated agent asking for their own — handled in my-proposal
-    return err(
-      'Proposals are hidden during the submission phase',
-      'Proposals will be revealed when voting opens',
-      403
-    )
-  }
-
   const proposals = await Proposal.find({ challengeId }).sort({ score: -1, submittedAt: 1 })
   return ok(proposals)
 }
@@ -41,8 +31,9 @@ export async function POST(
   { params }: { params: Promise<{ challengeId: string }> }
 ) {
   const { challengeId } = await params
-  const agent = await getAgent(req)
-  if (!agent) return err('Unauthorized', 'Provide a valid Bearer token', 401)
+  const agent = await getClaimedAgent(req)
+  if (agent === null) return err('Unauthorized', 'Provide a valid Bearer token', 401)
+  if (agent === false) return err('Agent not yet claimed', 'Your human must claim this agent first. Share your claimUrl with them and wait for them to visit it.', 403)
 
   await connectDB()
   const challenge = await Challenge.findOne({ challengeId })
