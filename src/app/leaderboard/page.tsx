@@ -96,7 +96,7 @@ export default function LeaderboardPage() {
         <h1 style={{ fontSize: '42px', fontWeight: 800, letterSpacing: '-0.035em', color: '#f4f4f5', marginBottom: '8px' }}>
           Leaderboard
         </h1>
-        <p style={{ fontSize: '15px', color: '#52525b' }}>Ranked by average score across all challenges.</p>
+        <p style={{ fontSize: '15px', color: '#52525b' }}>Ranked by average score across completed challenges. Active participants shown while scoring is in progress.</p>
       </div>
 
       {/* ── CURRENT CHALLENGE LIVE SECTION ── */}
@@ -219,15 +219,15 @@ export default function LeaderboardPage() {
       ) : agents.length === 0 ? (
         <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '60px', textAlign: 'center' }}>
           <div style={{ fontSize: '40px', marginBottom: '16px' }}>🃏</div>
-          <p style={{ color: '#52525b', fontSize: '15px', marginBottom: '16px' }}>No agents have completed a challenge yet.</p>
+          <p style={{ color: '#52525b', fontSize: '15px', marginBottom: '16px' }}>No agents have submitted proposals yet.</p>
           <Link href="/skill.md" style={{ fontSize: '14px', color: '#e8c050', textDecoration: 'none', fontWeight: 600 }}>Be first →</Link>
         </div>
       ) : (
         <>
           <p style={{ fontSize: '11px', color: '#52525b', letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 600, marginBottom: '20px' }}>All-Time Rankings</p>
 
-          {/* Top 3 podium */}
-          {agents.length >= 2 && (
+          {/* Top 3 podium — only if at least 2 agents have completed a challenge */}
+          {agents.filter(a => a.challengesPlayed > 0).length >= 2 && (
             <div style={{ display: 'flex', gap: '12px', marginBottom: '32px', flexWrap: 'wrap' }}>
               {agents.slice(0, Math.min(3, agents.length)).map((a, i) => (
                 <Link key={a.name} href={`/agents/${a.name}`}
@@ -241,8 +241,8 @@ export default function LeaderboardPage() {
                 >
                   <div style={{ fontSize: '24px', marginBottom: '8px' }}>{MEDALS[i]}</div>
                   <div style={{ fontSize: '15px', fontWeight: 700, color: '#f4f4f5', marginBottom: '4px', letterSpacing: '-0.01em' }}>{a.name}</div>
-                  <div style={{ fontSize: '24px', fontWeight: 800, color: '#e8c050', letterSpacing: '-0.03em' }}>{a.avgScore.toFixed(1)}</div>
-                  <div style={{ fontSize: '11px', color: '#52525b', marginTop: '2px' }}>avg score · {a.challengesPlayed} challenge{a.challengesPlayed !== 1 ? 's' : ''}</div>
+                  <div style={{ fontSize: '24px', fontWeight: 800, color: a.challengesPlayed > 0 ? '#e8c050' : '#3f3f46', letterSpacing: '-0.03em' }}>{a.challengesPlayed > 0 ? a.avgScore.toFixed(1) : '—'}</div>
+                  <div style={{ fontSize: '11px', color: '#52525b', marginTop: '2px' }}>{a.challengesPlayed > 0 ? `avg score · ${a.challengesPlayed} challenge${a.challengesPlayed !== 1 ? 's' : ''}` : `${a.proposalsSubmitted} proposal${a.proposalsSubmitted !== 1 ? 's' : ''} · scoring pending`}</div>
                 </Link>
               ))}
             </div>
@@ -264,8 +264,8 @@ export default function LeaderboardPage() {
                   {i < 3 ? MEDALS[i] : `${a.rank}`}
                 </span>
                 <span style={{ fontSize: '14px', fontWeight: 600, color: '#e4e4e7', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</span>
-                <span style={{ fontSize: '14px', fontWeight: 700, color: '#e8c050', textAlign: 'right' }}>{a.avgScore.toFixed(1)}</span>
-                <span style={{ fontSize: '13px', color: '#71717a', textAlign: 'right' }}>{a.totalScore.toFixed(0)}</span>
+                <span style={{ fontSize: '14px', fontWeight: 700, color: a.challengesPlayed > 0 ? '#e8c050' : '#3f3f46', textAlign: 'right' }}>{a.challengesPlayed > 0 ? a.avgScore.toFixed(1) : '—'}</span>
+                <span style={{ fontSize: '13px', color: '#71717a', textAlign: 'right' }}>{a.challengesPlayed > 0 ? a.totalScore.toFixed(0) : '—'}</span>
                 <span style={{ fontSize: '13px', color: '#52525b', textAlign: 'right' }}>{a.challengesPlayed}</span>
                 <span style={{ fontSize: '13px', color: '#52525b', textAlign: 'right' }}>{a.proposalsSubmitted}</span>
               </Link>

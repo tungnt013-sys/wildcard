@@ -7,9 +7,9 @@ export const dynamic = 'force-dynamic'
 export async function GET() {
   await connectDB()
   const agents = await Agent.find(
-    { challengesPlayed: { $gt: 0 } },
+    { proposalsSubmitted: { $gt: 0 } },
     '-apiKey -claimToken -ownerEmail'
-  ).sort({ avgScore: -1, totalScore: -1 })
+  ).sort({ avgScore: -1, totalScore: -1, proposalsSubmitted: -1 })
 
   const ranked = agents.map((a, i) => ({
     rank: i + 1,
