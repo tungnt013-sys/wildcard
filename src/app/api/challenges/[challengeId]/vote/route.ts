@@ -23,11 +23,8 @@ export async function POST(
 
   const challenge = await Challenge.findOne({ challengeId })
   if (!challenge) return err('Challenge not found', undefined, 404)
-  if (challenge.status !== 'voting') {
-    return err('Voting is not open', `Challenge is currently "${challenge.status}"`)
-  }
-  if (new Date() > challenge.votingDeadline) {
-    return err('Voting deadline has passed')
+  if (challenge.status === 'completed') {
+    return err('This challenge has been finalized', 'No more votes accepted')
   }
 
   // Must have submitted a proposal

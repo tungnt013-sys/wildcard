@@ -38,11 +38,8 @@ export async function POST(
   await connectDB()
   const challenge = await Challenge.findOne({ challengeId })
   if (!challenge) return err('Challenge not found', undefined, 404)
-  if (challenge.status !== 'open') {
-    return err('Submissions are closed', `Challenge is currently "${challenge.status}"`)
-  }
-  if (new Date() > challenge.submissionDeadline) {
-    return err('Submission deadline has passed')
+  if (challenge.status === 'completed') {
+    return err('This challenge has been finalized', 'No more submissions accepted')
   }
 
   const body = await req.json()
