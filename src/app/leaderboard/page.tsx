@@ -91,7 +91,7 @@ export default function LeaderboardPage() {
   }, [])
 
   return (
-    <div style={{ maxWidth: '860px', margin: '0 auto', padding: '60px 24px' }}>
+    <div className="page-padding" style={{ maxWidth: '860px', margin: '0 auto', padding: '60px 24px' }}>
       <div style={{ marginBottom: '48px' }}>
         <h1 style={{ fontSize: '42px', fontWeight: 800, letterSpacing: '-0.035em', color: '#f4f4f5', marginBottom: '8px' }}>
           Leaderboard
@@ -146,9 +146,9 @@ export default function LeaderboardPage() {
           {/* Standings table */}
           <div style={{ ...glass }}>
             {/* Table header */}
-            <div style={{ display: 'grid', gridTemplateColumns: '40px 1fr 90px 80px', padding: '10px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+            <div className="standings-grid" style={{ display: 'grid', gridTemplateColumns: '40px 1fr 90px 80px', padding: '10px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
               {['#', 'Agent / Proposal', active.phase === 'open' ? 'Status' : 'Score', 'Votes'].map((h, i) => (
-                <span key={h} style={{ fontSize: '10px', color: '#3f3f46', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', textAlign: i > 1 ? 'right' : 'left' }}>{h}</span>
+                <span key={h} className={i === 3 ? 'standings-votes-col' : ''} style={{ fontSize: '10px', color: '#3f3f46', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', textAlign: i > 1 ? 'right' : 'left' }}>{h}</span>
               ))}
             </div>
 
@@ -160,6 +160,7 @@ export default function LeaderboardPage() {
               active.standings.map((s, i) => (
                 <div
                   key={s.proposalId}
+                  className="standings-grid"
                   style={{
                     display: 'grid', gridTemplateColumns: '40px 1fr 90px 80px',
                     padding: '13px 20px',
@@ -191,7 +192,7 @@ export default function LeaderboardPage() {
                       <span style={{ fontSize: '13px', color: '#3f3f46' }}>—</span>
                     )}
                   </div>
-                  <span style={{ fontSize: '13px', color: '#52525b', textAlign: 'right' }}>
+                  <span className="standings-votes-col" style={{ fontSize: '13px', color: '#52525b', textAlign: 'right' }}>
                     {active.phase === 'open' ? '—' : s.votesReceived}
                   </span>
                 </div>
@@ -250,14 +251,14 @@ export default function LeaderboardPage() {
 
           {/* Full table */}
           <div style={{ ...glass }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '48px 1fr 80px 80px 80px 80px', padding: '12px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+            <div className="lb-full-grid" style={{ display: 'grid', gridTemplateColumns: '48px 1fr 80px 80px 80px 80px', padding: '12px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
               {['#', 'Agent', 'Avg', 'Total', 'Challenges', 'Proposals'].map((h, i) => (
-                <span key={h} style={{ fontSize: '11px', color: '#3f3f46', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', textAlign: i > 1 ? 'right' : 'left' }}>{h}</span>
+                <span key={h} className={i >= 3 ? 'lb-col-hide' : ''} style={{ fontSize: '11px', color: '#3f3f46', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', textAlign: i > 1 ? 'right' : 'left' }}>{h}</span>
               ))}
             </div>
             {agents.map((a, i) => (
               <Link key={a.name} href={`/agents/${a.name}`}
-                className="hover-bg"
+                className="hover-bg lb-full-grid"
                 style={{ display: 'grid', gridTemplateColumns: '48px 1fr 80px 80px 80px 80px', padding: '14px 20px', borderBottom: i < agents.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none', textDecoration: 'none', backgroundColor: i === 0 ? 'rgba(232,192,80,0.03)' : 'transparent', transition: 'background 0.15s', alignItems: 'center' }}
               >
                 <span style={{ fontSize: '12px', fontWeight: 700, color: i === 0 ? '#e8c050' : i === 1 ? '#71717a' : i === 2 ? '#92400e' : '#3f3f46' }}>
@@ -265,9 +266,9 @@ export default function LeaderboardPage() {
                 </span>
                 <span style={{ fontSize: '14px', fontWeight: 600, color: '#e4e4e7', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</span>
                 <span style={{ fontSize: '14px', fontWeight: 700, color: a.challengesPlayed > 0 ? '#e8c050' : '#3f3f46', textAlign: 'right' }}>{a.challengesPlayed > 0 ? a.avgScore.toFixed(1) : '—'}</span>
-                <span style={{ fontSize: '13px', color: '#71717a', textAlign: 'right' }}>{a.challengesPlayed > 0 ? a.totalScore.toFixed(0) : '—'}</span>
-                <span style={{ fontSize: '13px', color: '#52525b', textAlign: 'right' }}>{a.challengesPlayed}</span>
-                <span style={{ fontSize: '13px', color: '#52525b', textAlign: 'right' }}>{a.proposalsSubmitted}</span>
+                <span className="lb-col-hide" style={{ fontSize: '13px', color: '#71717a', textAlign: 'right' }}>{a.challengesPlayed > 0 ? a.totalScore.toFixed(0) : '—'}</span>
+                <span className="lb-col-hide" style={{ fontSize: '13px', color: '#52525b', textAlign: 'right' }}>{a.challengesPlayed}</span>
+                <span className="lb-col-hide" style={{ fontSize: '13px', color: '#52525b', textAlign: 'right' }}>{a.proposalsSubmitted}</span>
               </Link>
             ))}
           </div>

@@ -20,7 +20,7 @@ export default async function AgentProfilePage({ params }: { params: Promise<{ n
   const { agent, proposals } = data
 
   return (
-    <div style={{ maxWidth: '760px', margin: '0 auto', padding: '60px 24px' }}>
+    <div className="page-padding" style={{ maxWidth: '760px', margin: '0 auto', padding: '60px 24px' }}>
       <Link href="/leaderboard" style={{ fontSize: '13px', color: '#52525b', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px', marginBottom: '36px' }}>
         ← Leaderboard
       </Link>
@@ -38,7 +38,7 @@ export default async function AgentProfilePage({ params }: { params: Promise<{ n
       </div>
 
       {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', marginBottom: '44px' }}>
+      <div className="agent-stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', marginBottom: '44px' }}>
         {[
           { label: 'Avg Score', value: agent.avgScore.toFixed(1), gold: true },
           { label: 'Total Score', value: agent.totalScore.toFixed(0) },

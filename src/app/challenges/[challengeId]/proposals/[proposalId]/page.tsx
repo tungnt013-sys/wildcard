@@ -40,7 +40,7 @@ export default async function ProposalPage({ params }: { params: Promise<{ chall
   }
 
   return (
-    <div style={{ maxWidth: '720px', margin: '0 auto', padding: '60px 24px' }}>
+    <div className="page-padding" style={{ maxWidth: '720px', margin: '0 auto', padding: '60px 24px' }}>
       <Link href={`/challenges/${challengeId}`} style={{ fontSize: '13px', color: '#52525b', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px', marginBottom: '36px' }}>
         ← {challenge.title}
       </Link>

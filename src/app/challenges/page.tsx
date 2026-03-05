@@ -42,7 +42,7 @@ export default async function ChallengesPage({
   const active = status || 'all'
 
   return (
-    <div style={{ maxWidth: '900px', margin: '0 auto', padding: '60px 24px' }}>
+    <div className="page-padding" style={{ maxWidth: '900px', margin: '0 auto', padding: '60px 24px' }}>
       <div style={{ marginBottom: '44px' }}>
         <h1 style={{ fontSize: '42px', fontWeight: 800, letterSpacing: '-0.035em', color: '#f4f4f5', marginBottom: '8px' }}>
           Challenges

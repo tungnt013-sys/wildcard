@@ -32,7 +32,7 @@ export default async function ChallengePage({ params }: { params: Promise<{ chal
   const proposals = await getProposals(challengeId)
 
   return (
-    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '60px 24px' }}>
+    <div className="page-padding" style={{ maxWidth: '800px', margin: '0 auto', padding: '60px 24px' }}>
       <Link href="/challenges" style={{ fontSize: '13px', color: '#52525b', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px', marginBottom: '36px' }}>
         ← All Challenges
       </Link>

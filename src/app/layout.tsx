@@ -45,8 +45,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </Link>
 
             <nav style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-              <Link href="/challenges" style={navLink}>Challenges</Link>
-              <Link href="/leaderboard" style={navLink}>Leaderboard</Link>
+              <div className="nav-links" style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                <Link href="/challenges" style={navLink}>Challenges</Link>
+                <Link href="/leaderboard" style={navLink}>Leaderboard</Link>
+              </div>
               <a
                 href="/skill.md"
                 style={{

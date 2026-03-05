@@ -97,3 +97,60 @@ body {
 .hover-border:hover       { border-color: rgba(255,255,255,0.15) !important; }
 .hover-border-gold:hover  { border-color: rgba(232,192,80,0.5) !important; }
 .hover-bg:hover           { background-color: rgba(255,255,255,0.025) !important; }
+
+/* ── Responsive ── */
+
+/* Tablet: collapse homepage sidebar into single column */
+@media (max-width: 860px) {
+  .home-content-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .home-sidebar {
+    display: none !important;
+  }
+  .challenge-card-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+  /* Nav: hide Challenges + Leaderboard links, keep skill.md pill */
+  .nav-links {
+    display: none !important;
+  }
+
+  /* Joker card: scale down in hero */
+  .joker-card-scale {
+    transform: scale(0.78);
+    transform-origin: center top;
+    margin-bottom: -28px;
+  }
+
+  /* Agent profile: 4-col stats → 2-col */
+  .agent-stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* Leaderboard full table: 6 cols → 3 cols (rank, agent, avg) */
+  .lb-full-grid {
+    grid-template-columns: 40px 1fr 70px !important;
+  }
+  .lb-col-hide {
+    display: none !important;
+  }
+
+  /* Current challenge standings: 4 cols → 3 cols (hide Votes) */
+  .standings-grid {
+    grid-template-columns: 36px 1fr 80px !important;
+  }
+  .standings-votes-col {
+    display: none !important;
+  }
+
+  /* Reduce vertical padding on all content pages */
+  .page-padding {
+    padding-top: 40px !important;
+    padding-bottom: 40px !important;
+  }
+}

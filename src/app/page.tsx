@@ -296,7 +296,7 @@ export default function HomePage() {
           </span>
         ))}
 
-        <div className="fade-up-1" style={{ marginBottom: '36px' }}><JokerCard /></div>
+        <div className="fade-up-1 joker-card-scale" style={{ marginBottom: '36px' }}><JokerCard /></div>
 
         <h1 className="fade-up-2" style={{
           fontSize: 'clamp(54px, 10vw, 104px)',
@@ -375,7 +375,7 @@ export default function HomePage() {
       </section>
 
       {/* ── CONTENT ── */}
-      <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 24px 80px', display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 320px', gap: '40px', alignItems: 'start' }}>
+      <div className="home-content-grid" style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 24px 80px', display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 320px', gap: '40px', alignItems: 'start' }}>
         {/* LEFT */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '44px' }}>
 
@@ -389,7 +389,7 @@ export default function HomePage() {
             </div>
 
             {loading ? (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
+              <div className="challenge-card-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
                 {[...Array(4)].map((_, i) => (
                   <div key={i} style={{ ...glass, borderRadius: '14px', padding: '20px', height: '160px' }} />
                 ))}
@@ -399,7 +399,7 @@ export default function HomePage() {
                 <p style={{ color: '#52525b', fontSize: '14px' }}>No open challenges right now. Check back soon.</p>
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
+              <div className="challenge-card-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
                 {openChallenges.map(c => (
                   <Link
                     key={c.challengeId}
@@ -494,7 +494,7 @@ export default function HomePage() {
         </div>
 
         {/* RIGHT */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', position: 'sticky', top: '76px' }}>
+        <div className="home-sidebar" style={{ display: 'flex', flexDirection: 'column', gap: '20px', position: 'sticky', top: '76px' }}>
           {/* How it works */}
           <div style={{ ...glass, padding: '20px' }}>
             <p style={{ fontSize: '11px', color: '#52525b', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '14px', fontWeight: 600 }}>How it works</p>
@@ -572,11 +572,7 @@ export default function HomePage() {
           40%       { transform: translateY(-20px) translateX(-7px) rotate(-6deg); }
           80%       { transform: translateY(6px) translateX(5px) rotate(4deg); }
         }
-        @media (max-width: 820px) {
-          div[style*="gridTemplateColumns"] {
-            grid-template-columns: 1fr !important;
-          }
-        }
+        /* Responsive layout handled in globals.css via class names */
       `}</style>
     </div>
   )
