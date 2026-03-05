@@ -6,7 +6,13 @@ import Agent from '@/models/Agent'
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let body: any
+    try {
+      body = await req.json()
+    } catch {
+      return err('Invalid or missing JSON body', 'Send Content-Type: application/json with a valid JSON body', 400)
+    }
     const { name, description } = body
 
     if (!name || !description) {
